@@ -1,85 +1,141 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.canteen.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.canteen.dao.ProductDAO;
+import com.canteen.model.CartItemBean;
+import com.canteen.model.ProductBean;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- *
- * @author purvadalwadi
- */
+@WebServlet("/cart")
 public class CartServlet extends HttpServlet {
-
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    private ProductDAO productDAO;
+    
+    @Override
+    public void init() {
+        productDAO = new ProductDAO();
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet CartServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet CartServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        
+        String action = request.getParameter("action");
+        
+        if ("add".equals(action)) {
+            addToCart(request, response);
+        } else if ("update".equals(action)) {
+            updateCart(request, response);
+        } else if ("remove".equals(action)) {
+            removeFromCart(request, response);
+        } else if ("clear".equals(action)) {
+            clearCart(request, response);
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        response.sendRedirect("cart.jsp");
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    
+    private void addToCart(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        int productId = Integer.parseInt(request.getParameter("productId"));
+        int quantity = Integer.parseInt(request.getParameter("quantity"));
+        
+        ProductBean product = productDAO.getProductById(productId);
+        
+        if (product == null || !product.isInStock() || product.getStockQuantity() < quantity) {
+            request.setAttribute("error", "Product not available or insufficient stock!");
+            request.getRequestDispatcher("menu.jsp").forward(request, response);
+            return;
+        }
+        
+        HttpSession session = request.getSession();
+        @SuppressWarnings("unchecked")
+        List<CartItemBean> cart = (List<CartItemBean>) session.getAttribute("cart");
+        
+        if (cart == null) {
+            cart = new ArrayList<>();
+        }
+        
+        // Check if product already in cart
+        boolean found = false;
+        for (CartItemBean item : cart) {
+            if (item.getProduct().getProductId() == productId) {
+                int newQuantity = item.getQuantity() + quantity;
+                if (newQuantity <= product.getStockQuantity()) {
+                    item.setQuantity(newQuantity);
+                    found = true;
+                }
+                break;
+            }
+        }
+        
+        if (!found) {
+            CartItemBean newItem = new CartItemBean(product, quantity);
+            cart.add(newItem);
+        }
+        
+        session.setAttribute("cart", cart);
+        response.sendRedirect("menu.jsp?added=true");
     }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
+    
+    private void updateCart(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        int productId = Integer.parseInt(request.getParameter("productId"));
+        int quantity = Integer.parseInt(request.getParameter("quantity"));
+        
+        HttpSession session = request.getSession();
+        @SuppressWarnings("unchecked")
+        List<CartItemBean> cart = (List<CartItemBean>) session.getAttribute("cart");
+        
+        if (cart != null) {
+            for (CartItemBean item : cart) {
+                if (item.getProduct().getProductId() == productId) {
+                    if (quantity > 0) {
+                        item.setQuantity(quantity);
+                    } else {
+                        cart.remove(item);
+                    }
+                    break;
+                }
+            }
+            session.setAttribute("cart", cart);
+        }
+        
+        response.sendRedirect("cart.jsp");
+    }
+    
+    private void removeFromCart(HttpServletRequest request, HttpServletResponse response) 
+            throws ServletException, IOException {
+        
+        int productId = Integer.parseInt(request.getParameter("productId"));
+        
+        HttpSession session = request.getSession();
+        @SuppressWarnings("unchecked")
+        List<CartItemBean> cart = (List<CartItemBean>) session.getAttribute("cart");
+        
+        if (cart != null) {
+            cart.removeIf(item -> item.getProduct().getProductId() == productId);
+            session.setAttribute("cart", cart);
+        }
+        
+        response.sendRedirect("cart.jsp");
+    }
+    
+    private void clearCart(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        
+        HttpSession session = request.getSession();
+        session.removeAttribute("cart");
+        response.sendRedirect("cart.jsp");
+    }
 }

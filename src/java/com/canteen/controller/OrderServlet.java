@@ -1,85 +1,90 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.canteen.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.canteen.dao.OrderDAO;
+import com.canteen.model.*;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
-/**
- *
- * @author purvadalwadi
- */
+@WebServlet("/order")
 public class OrderServlet extends HttpServlet {
-
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    private OrderDAO orderDAO;
+    
+    @Override
+    public void init() {
+        orderDAO = new OrderDAO();
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet OrderServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet OrderServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        
+        String action = request.getParameter("action");
+        
+        if ("place".equals(action)) {
+            placeOrder(request, response);
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
+    
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        response.sendRedirect("my_orders.jsp");
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    
+    private void placeOrder(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        HttpSession session = request.getSession();
+        Integer userId = (Integer) session.getAttribute("userId");
+        
+        if (userId == null) {
+            response.sendRedirect("login.jsp");
+            return;
+        }
+        
+        @SuppressWarnings("unchecked")
+        List<CartItemBean> cart = (List<CartItemBean>) session.getAttribute("cart");
+        
+        if (cart == null || cart.isEmpty()) {
+            response.sendRedirect("cart.jsp");
+            return;
+        }
+        
+        // Create order
+        OrderBean order = new OrderBean();
+        order.setUserId(userId);
+        
+        double totalAmount = 0;
+        List<OrderDetailBean> orderDetails = new ArrayList<>();
+        
+        for (CartItemBean cartItem : cart) {
+            OrderDetailBean detail = new OrderDetailBean();
+            detail.setProductId(cartItem.getProduct().getProductId());
+            detail.setProductName(cartItem.getProduct().getName());
+            detail.setQuantity(cartItem.getQuantity());
+            detail.setPriceAtOrder(cartItem.getProduct().getPrice());
+            
+            orderDetails.add(detail);
+            totalAmount += cartItem.getSubtotal();
+        }
+        
+        order.setTotalAmount(totalAmount);
+        order.setOrderDetails(orderDetails);
+        
+        boolean success = orderDAO.placeOrder(order);
+        
+        if (success) {
+            session.removeAttribute("cart");
+            request.setAttribute("orderTotal", totalAmount);
+            request.getRequestDispatcher("success.jsp").forward(request, response);
+        } else {
+            request.setAttribute("error", "Order placement failed! Please try again.");
+            request.getRequestDispatcher("checkout.jsp").forward(request, response);
+        }
     }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
 }

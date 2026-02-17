@@ -1,85 +1,125 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/JSP_Servlet/Servlet.java to edit this template
- */
 package com.canteen.controller;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import com.canteen.dao.OrderDAO;
+import com.canteen.dao.ProductDAO;
+import com.canteen.model.ProductBean;
 import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.*;
+import java.io.IOException;
 
-/**
- *
- * @author purvadalwadi
- */
+@WebServlet("/admin")
 public class AdminServlet extends HttpServlet {
-
-    /**
-     * Processes requests for both HTTP <code>GET</code> and <code>POST</code>
-     * methods.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
+    private ProductDAO productDAO;
+    private OrderDAO orderDAO;
+    
+    @Override
+    public void init() {
+        productDAO = new ProductDAO();
+        orderDAO = new OrderDAO();
+    }
+    
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-        try (PrintWriter out = response.getWriter()) {
-            /* TODO output your page here. You may use following sample code. */
-            out.println("<!DOCTYPE html>");
-            out.println("<html>");
-            out.println("<head>");
-            out.println("<title>Servlet AdminServlet</title>");
-            out.println("</head>");
-            out.println("<body>");
-            out.println("<h1>Servlet AdminServlet at " + request.getContextPath() + "</h1>");
-            out.println("</body>");
-            out.println("</html>");
+        
+        String action = request.getParameter("action");
+        
+        switch (action) {
+            case "addProduct":
+                addProduct(request, response);
+                break;
+            case "updateProduct":
+                updateProduct(request, response);
+                break;
+            case "deleteProduct":
+                deleteProduct(request, response);
+                break;
+            case "updateOrderStatus":
+                updateOrderStatus(request, response);
+                break;
+            default:
+                response.sendRedirect("admin_dashboard.jsp");
         }
     }
-
-    // <editor-fold defaultstate="collapsed" desc="HttpServlet methods. Click on the + sign on the left to edit the code.">
-    /**
-     * Handles the HTTP <code>GET</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+    
+    private void addProduct(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        String name = request.getParameter("name");
+        String category = request.getParameter("category");
+        double price = Double.parseDouble(request.getParameter("price"));
+        int stock = Integer.parseInt(request.getParameter("stock"));
+        String description = request.getParameter("description");
+        
+        ProductBean product = new ProductBean();
+        product.setName(name);
+        product.setCategory(category);
+        product.setPrice(price);
+        product.setStockQuantity(stock);
+        product.setDescription(description);
+        
+        boolean success = productDAO.addProduct(product);
+        
+        if (success) {
+            response.sendRedirect("admin_dashboard.jsp?success=Product added successfully");
+        } else {
+            response.sendRedirect("add_item.jsp?error=Failed to add product");
+        }
     }
-
-    /**
-     * Handles the HTTP <code>POST</code> method.
-     *
-     * @param request servlet request
-     * @param response servlet response
-     * @throws ServletException if a servlet-specific error occurs
-     * @throws IOException if an I/O error occurs
-     */
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+    
+    private void updateProduct(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        processRequest(request, response);
+        
+        int productId = Integer.parseInt(request.getParameter("productId"));
+        String name = request.getParameter("name");
+        String category = request.getParameter("category");
+        double price = Double.parseDouble(request.getParameter("price"));
+        int stock = Integer.parseInt(request.getParameter("stock"));
+        String description = request.getParameter("description");
+        
+        ProductBean product = new ProductBean();
+        product.setProductId(productId);
+        product.setName(name);
+        product.setCategory(category);
+        product.setPrice(price);
+        product.setStockQuantity(stock);
+        product.setDescription(description);
+        
+        boolean success = productDAO.updateProduct(product);
+        
+        if (success) {
+            response.sendRedirect("admin_dashboard.jsp?success=Product updated successfully");
+        } else {
+            response.sendRedirect("admin_dashboard.jsp?error=Failed to update product");
+        }
     }
-
-    /**
-     * Returns a short description of the servlet.
-     *
-     * @return a String containing servlet description
-     */
-    @Override
-    public String getServletInfo() {
-        return "Short description";
-    }// </editor-fold>
-
+    
+    private void deleteProduct(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        
+        int productId = Integer.parseInt(request.getParameter("productId"));
+        boolean success = productDAO.deleteProduct(productId);
+        
+        if (success) {
+            response.sendRedirect("admin_dashboard.jsp?success=Product deleted successfully");
+        } else {
+            response.sendRedirect("admin_dashboard.jsp?error=Failed to delete product");
+        }
+    }
+    
+    private void updateOrderStatus(HttpServletRequest request, HttpServletResponse response) 
+            throws IOException {
+        
+        int orderId = Integer.parseInt(request.getParameter("orderId"));
+        String status = request.getParameter("status");
+        
+        boolean success = orderDAO.updateOrderStatus(orderId, status);
+        
+        if (success) {
+            response.sendRedirect("admin_dashboard.jsp?success=Order status updated");
+        } else {
+            response.sendRedirect("admin_dashboard.jsp?error=Failed to update order");
+        }
+    }
 }
