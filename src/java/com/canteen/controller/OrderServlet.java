@@ -9,7 +9,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet("/order")
+
 public class OrderServlet extends HttpServlet {
     private OrderDAO orderDAO;
     

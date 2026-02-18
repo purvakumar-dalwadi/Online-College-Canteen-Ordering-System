@@ -10,7 +10,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-@WebServlet("/cart")
+
 public class CartServlet extends HttpServlet {
     private ProductDAO productDAO;
     

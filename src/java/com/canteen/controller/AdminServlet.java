@@ -8,7 +8,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 
-@WebServlet("/admin")
+
 public class AdminServlet extends HttpServlet {
     private ProductDAO productDAO;
     private OrderDAO orderDAO;

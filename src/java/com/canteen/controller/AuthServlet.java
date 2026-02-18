@@ -7,7 +7,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.*;
 import java.io.IOException;
 
-@WebServlet("/auth")
+
 public class AuthServlet extends HttpServlet {
     private UserDAO userDAO;
     
