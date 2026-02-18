@@ -7,7 +7,7 @@ import java.sql.SQLException;
 public class DBConnection {
     private static final String URL = "jdbc:mysql://localhost:3306/canteen_db";
     private static final String USER = "root";
-    private static final String PASSWORD = "purvd2496"; // Change this to your MySQL password
+    private static final String PASSWORD = ""; // Change this to your MySQL password
     
     static {
         try {
