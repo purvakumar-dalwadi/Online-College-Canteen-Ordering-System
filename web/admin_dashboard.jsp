@@ -76,7 +76,7 @@
                             </td>
                             <td>
                                 <button onclick="editProduct(<%= product.getProductId() %>, '<%= product.getName() %>', '<%= product.getCategory() %>', <%= product.getPrice() %>, <%= product.getStockQuantity() %>, '<%= product.getDescription() != null ? product.getDescription().replace("'", "\\'") : "" %>')" class="btn btn-small btn-secondary">Edit</button>
-                                <form action="admin" method="post" style="display:inline;">
+                                <form action="admin" method="post" class="inline-form">
                                     <input type="hidden" name="action" value="deleteProduct">
                                     <input type="hidden" name="productId" value="<%= product.getProductId() %>">
                                     <button type="submit" class="btn btn-small btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
@@ -91,7 +91,6 @@
         <!-- Orders Tab -->
         <div id="orders" class="tab-content">
             <h2>All Orders</h2>
-            
             <table class="admin-table">
                 <thead>
                     <tr>
@@ -100,6 +99,7 @@
                         <th>Total</th>
                         <th>Date</th>
                         <th>Status</th>
+                        <th>Transaction ID</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -107,7 +107,7 @@
                     <% for (OrderBean order : orders) { %>
                         <tr>
                             <td>#<%= order.getOrderId() %></td>
-                            <td><%= order.getUserId() %></td>
+                            <td><%= order.getUserName() %></td>
                             <td>₹<%= String.format("%.2f", order.getTotalAmount()) %></td>
                             <td><%= order.getOrderDate() %></td>
                             <td>
@@ -116,7 +116,15 @@
                                 </span>
                             </td>
                             <td>
-                                <form action="admin" method="post" style="display:inline;">
+                                <% String txId = order.getTransactionId(); %>
+                                <% if (txId != null && !txId.isEmpty()) { %>
+                                    <span style="font-size: 12px; word-break: break-all; color: #333;"><%= txId %></span>
+                                <% } else { %>
+                                    <span style="color: #aaa; font-size: 12px;">—</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <form action="admin" method="post" class="inline-form">
                                     <input type="hidden" name="action" value="updateOrderStatus">
                                     <input type="hidden" name="orderId" value="<%= order.getOrderId() %>">
                                     <select name="status" onchange="this.form.submit()">
@@ -127,7 +135,7 @@
                                         <option value="Cancelled" <%= "Cancelled".equals(order.getStatus()) ? "selected" : "" %>>Cancelled</option>
                                     </select>
                                 </form>
-                                <button onclick="viewOrderDetails(<%= order.getOrderId() %>, '<%= order.getOrderDetails() %>')" class="btn btn-small">View Details</button>
+                                <button onclick="viewOrderDetails(<%= order.getOrderId() %>, '<%= order.getOrderDetailsSummary().replace("'", "\\'").replace("\n", "\\n") %>')" class="btn btn-small">View Details</button>
                             </td>
                         </tr>
                     <% } %>

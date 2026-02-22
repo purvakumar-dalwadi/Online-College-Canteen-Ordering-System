@@ -58,6 +58,13 @@ public class OrderServlet extends HttpServlet {
         // Create order
         OrderBean order = new OrderBean();
         order.setUserId(userId);
+        String paymentMethod = request.getParameter("paymentMethod");
+        if (paymentMethod == null || paymentMethod.isEmpty()) {
+            request.setAttribute("error", "Please select a payment method.");
+            request.getRequestDispatcher("payment.jsp").forward(request, response);
+            return;
+        }
+        order.setPaymentMethod(paymentMethod);
         
         double totalAmount = 0;
         List<OrderDetailBean> orderDetails = new ArrayList<>();
@@ -77,10 +84,38 @@ public class OrderServlet extends HttpServlet {
         order.setOrderDetails(orderDetails);
         
         boolean success = orderDAO.placeOrder(order);
-        
+
         if (success) {
+            // Get the latest order for this user (assuming just placed)
+            List<OrderBean> userOrders = orderDAO.getOrdersByUserId(userId);
+            OrderBean latestOrder = userOrders != null && !userOrders.isEmpty() ? userOrders.get(0) : null;
+            int orderId = latestOrder != null ? latestOrder.getOrderId() : -1;
+
+            String paymentStatus = "Pending";
+            String transactionId = null;
+            java.sql.Timestamp paymentDate = null;
+
+            if ("Cash on Pickup".equals(paymentMethod)) {
+                paymentStatus = "Pending";
+                // No transactionId or paymentDate for cash at this stage
+            } else {
+                paymentStatus = "Completed";
+                // Always generate and save a mock transaction ID for online payments
+                transactionId = "TXN" + orderId + System.currentTimeMillis();
+                paymentDate = new java.sql.Timestamp(System.currentTimeMillis());
+            }
+
+            // Update payment details in DB if orderId is valid
+            if (orderId > 0) {
+                orderDAO.updatePaymentDetails(orderId, paymentStatus, transactionId, paymentDate);
+            }
+
             session.removeAttribute("cart");
             request.setAttribute("orderTotal", totalAmount);
+            request.setAttribute("paymentMethod", paymentMethod); // Pass payment method to success.jsp
+            request.setAttribute("transactionId", transactionId); // Pass transactionId to success.jsp
+            request.setAttribute("paymentStatus", paymentStatus);
+            request.setAttribute("paymentDate", paymentDate);
             request.getRequestDispatcher("success.jsp").forward(request, response);
         } else {
             request.setAttribute("error", "Order placement failed! Please try again.");

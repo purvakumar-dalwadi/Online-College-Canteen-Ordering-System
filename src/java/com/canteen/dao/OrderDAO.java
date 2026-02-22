@@ -18,12 +18,13 @@ public class OrderDAO {
             conn.setAutoCommit(false); // Start transaction
             
             // Insert into orders table
-            String orderSql = "INSERT INTO orders (user_id, total_amount, status) VALUES (?, ?, ?)";
+            String orderSql = "INSERT INTO orders (user_id, total_amount, status, payment_method, payment_status) VALUES (?, ?, ?, ?, ?)";
             PreparedStatement orderStmt = conn.prepareStatement(orderSql, Statement.RETURN_GENERATED_KEYS);
             orderStmt.setInt(1, order.getUserId());
             orderStmt.setDouble(2, order.getTotalAmount());
             orderStmt.setString(3, "Pending");
-            
+            orderStmt.setString(4, order.getPaymentMethod());
+            orderStmt.setString(5, "Pending");
             orderStmt.executeUpdate();
             
             // Get generated order_id
@@ -83,7 +84,7 @@ public class OrderDAO {
     // Get orders by user ID
     public List<OrderBean> getOrdersByUserId(int userId) {
         List<OrderBean> orders = new ArrayList<>();
-        String sql = "SELECT * FROM orders WHERE user_id = ? ORDER BY order_date DESC";
+        String sql = "SELECT o.*, u.username FROM orders o JOIN users u ON o.user_id = u.user_id WHERE o.user_id = ? ORDER BY o.order_date DESC";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -98,7 +99,10 @@ public class OrderDAO {
                 order.setTotalAmount(rs.getDouble("total_amount"));
                 order.setOrderDate(rs.getTimestamp("order_date"));
                 order.setStatus(rs.getString("status"));
-                
+                order.setPaymentMethod(rs.getString("payment_method"));
+                order.setUserName(rs.getString("username"));
+                order.setPaymentStatus(rs.getString("payment_status"));
+                order.setTransactionId(rs.getString("transaction_id"));
                 // Load order details
                 order.setOrderDetails(getOrderDetails(order.getOrderId()));
                 
@@ -115,7 +119,7 @@ public class OrderDAO {
     // Get all orders (Admin)
     public List<OrderBean> getAllOrders() {
         List<OrderBean> orders = new ArrayList<>();
-        String sql = "SELECT * FROM orders ORDER BY order_date DESC";
+        String sql = "SELECT o.*, u.username FROM orders o JOIN users u ON o.user_id = u.user_id ORDER BY o.order_date DESC";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql);
@@ -128,7 +132,10 @@ public class OrderDAO {
                 order.setTotalAmount(rs.getDouble("total_amount"));
                 order.setOrderDate(rs.getTimestamp("order_date"));
                 order.setStatus(rs.getString("status"));
-                
+                order.setPaymentMethod(rs.getString("payment_method"));
+                order.setUserName(rs.getString("username"));
+                order.setPaymentStatus(rs.getString("payment_status"));
+                order.setTransactionId(rs.getString("transaction_id"));
                 // Load order details
                 order.setOrderDetails(getOrderDetails(order.getOrderId()));
                 
@@ -175,15 +182,41 @@ public class OrderDAO {
     // Update order status (Admin)
     public boolean updateOrderStatus(int orderId, String status) {
         String sql = "UPDATE orders SET status = ? WHERE order_id = ?";
-        
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            
             pstmt.setString(1, status);
             pstmt.setInt(2, orderId);
-            
             return pstmt.executeUpdate() > 0;
-            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Update payment status, transaction ID, and payment date for an order
+    public boolean updatePaymentDetails(int orderId, String paymentStatus, String transactionId, Timestamp paymentDate) {
+        String sql = "UPDATE orders SET payment_status = ?, transaction_id = ?, payment_date = ? WHERE order_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, paymentStatus);
+            pstmt.setString(2, transactionId);
+            pstmt.setTimestamp(3, paymentDate);
+            pstmt.setInt(4, orderId);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Update payment status for an order (legacy, still usable)
+    public boolean updatePaymentStatus(int orderId, String paymentStatus) {
+        String sql = "UPDATE orders SET payment_status = ? WHERE order_id = ?";
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setString(1, paymentStatus);
+            pstmt.setInt(2, orderId);
+            return pstmt.executeUpdate() > 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;

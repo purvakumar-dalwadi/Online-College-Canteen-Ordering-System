@@ -53,16 +53,16 @@
                             <td><%= item.getProduct().getName() %></td>
                             <td>₹<%= String.format("%.2f", item.getProduct().getPrice()) %></td>
                             <td>
-                                <form action="cart" method="post" style="display:inline;">
+                                <form action="cart" method="post" class="inline-form">
                                     <input type="hidden" name="action" value="update">
                                     <input type="hidden" name="productId" value="<%= item.getProduct().getProductId() %>">
-                                    <input type="number" name="quantity" value="<%= item.getQuantity() %>" min="1" max="<%= item.getProduct().getStockQuantity() %>" style="width:60px;">
+                                    <input type="number" name="quantity" value="<%= item.getQuantity() %>" min="1" max="<%= item.getProduct().getStockQuantity() %>" class="quantity-input">
                                     <button type="submit" class="btn btn-small">Update</button>
                                 </form>
                             </td>
                             <td>₹<%= String.format("%.2f", item.getSubtotal()) %></td>
                             <td>
-                                <form action="cart" method="post" style="display:inline;">
+                                <form action="cart" method="post" class="inline-form">
                                     <input type="hidden" name="action" value="remove">
                                     <input type="hidden" name="productId" value="<%= item.getProduct().getProductId() %>">
                                     <button type="submit" class="btn btn-danger btn-small">Remove</button>
@@ -81,7 +81,7 @@
             </table>
             
             <div class="cart-actions">
-                <form action="cart" method="post" style="display:inline;">
+                <form action="cart" method="post" class="inline-form">
                     <input type="hidden" name="action" value="clear">
                     <button type="submit" class="btn btn-secondary">Clear Cart</button>
                 </form>

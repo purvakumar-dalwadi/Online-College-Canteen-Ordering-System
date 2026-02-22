@@ -113,9 +113,17 @@ public class AdminServlet extends HttpServlet {
         
         int orderId = Integer.parseInt(request.getParameter("orderId"));
         String status = request.getParameter("status");
-        
+
         boolean success = orderDAO.updateOrderStatus(orderId, status);
-        
+
+        // If status is set to Completed, also mark payment as completed and set payment date
+        if (success && "Completed".equals(status)) {
+            String paymentStatus = "Completed";
+            String transactionId = null; // For cash, transactionId may remain null
+            java.sql.Timestamp paymentDate = new java.sql.Timestamp(System.currentTimeMillis());
+            orderDAO.updatePaymentDetails(orderId, paymentStatus, transactionId, paymentDate);
+        }
+
         if (success) {
             response.sendRedirect("admin_dashboard.jsp?success=Order status updated");
         } else {
