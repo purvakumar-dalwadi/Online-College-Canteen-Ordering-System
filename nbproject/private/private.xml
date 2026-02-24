@@ -11,6 +11,11 @@
             <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/web/success.jsp</file>
             <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/src/java/com/canteen/model/UserBean.java</file>
             <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/src/java/com/canteen/dao/UserDAO.java</file>
+            <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/web/register.jsp</file>
+            <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/web/my_orders.jsp</file>
+            <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/web/checkout.jsp</file>
+            <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/web/payment.jsp</file>
+            <file>file:/Users/purvadalwadi/NetBeansProjects/Online%20College%20Canteen%20Ordering%20System/src/java/com/canteen/controller/AdminServlet.java</file>
         </group>
     </open-files>
 </project-private>

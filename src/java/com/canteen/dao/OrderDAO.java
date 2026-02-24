@@ -34,11 +34,11 @@ public class OrderDAO {
                 orderId = rs.getInt(1);
             }
             
-            // Insert order details and update stock
+            // Insert order details and update stock with concurrency control
             String detailSql = "INSERT INTO order_details (order_id, product_id, quantity, price_at_order) VALUES (?, ?, ?, ?)";
             PreparedStatement detailStmt = conn.prepareStatement(detailSql);
-            
-            String stockSql = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ?";
+            // Only update stock if enough is available (atomic check)
+            String stockSql = "UPDATE products SET stock_quantity = stock_quantity - ? WHERE product_id = ? AND stock_quantity >= ?";
             PreparedStatement stockStmt = conn.prepareStatement(stockSql);
             
             for (OrderDetailBean detail : order.getOrderDetails()) {
@@ -49,10 +49,16 @@ public class OrderDAO {
                 detailStmt.setDouble(4, detail.getPriceAtOrder());
                 detailStmt.executeUpdate();
                 
-                // Update stock
+                // Update stock with concurrency check
                 stockStmt.setInt(1, detail.getQuantity());
                 stockStmt.setInt(2, detail.getProductId());
-                stockStmt.executeUpdate();
+                stockStmt.setInt(3, detail.getQuantity());
+                int affectedRows = stockStmt.executeUpdate();
+                if (affectedRows == 0) {
+                    // Not enough stock, rollback and return false
+                    conn.rollback();
+                    return false;
+                }
             }
             
             conn.commit(); // Commit transaction
