@@ -169,6 +169,13 @@ The code expects at least these tables to exist:
 - `orders`
 - `order_details`
 
+Minimum columns inferred from the DAO layer:
+
+- `users`: `user_id`, `username`, `password`, `email`, `role`
+- `products`: `product_id`, `name`, `category`, `price`, `stock_quantity`, `image_url`, `description`
+- `orders`: `order_id`, `user_id`, `total_amount`, `status`, `payment_method`, `payment_status`, `transaction_id`, `payment_date`, `order_date`
+- `order_details`: `detail_id`, `order_id`, `product_id`, `quantity`, `price_at_order`
+
 > Note: the repository does not currently include SQL schema or migration files, so the database must be created manually.
 
 ## Build and Run Notes
@@ -204,7 +211,11 @@ There is currently **no automated test suite** checked into the repository:
 - no `test/` sources are present
 - no JUnit/TestNG tests are included
 
-In this environment, `ant test` also fails before running any tests because the NetBeans `CopyLibs` Ant property is not configured.
+With the repository's default NetBeans/Ant setup, `ant test` also fails before running any tests unless the NetBeans `CopyLibs` Ant property is configured. If you need to run Ant targets outside NetBeans, provide the property explicitly, for example:
+
+```bash
+ant -Dlibs.CopyLibs.classpath=/path/to/org-netbeans-modules-java-j2seproject-copylibstask.jar test
+```
 
 ## Summary
 
