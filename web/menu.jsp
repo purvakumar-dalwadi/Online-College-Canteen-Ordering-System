@@ -47,7 +47,7 @@
                             <p class="product-price">₹<%= String.format("%.2f", product.getPrice()) %></p>
                             
                             <% if (product.isInStock()) { %>
-                                <p class="stock-info">In Stock: <%= product.getStockQuantity() %></p>
+                                <p class="stock-info">In Stock</p>
                                 <form action="cart" method="post" class="add-to-cart-form">
                                     <input type="hidden" name="action" value="add">
                                     <input type="hidden" name="productId" value="<%= product.getProductId() %>">
